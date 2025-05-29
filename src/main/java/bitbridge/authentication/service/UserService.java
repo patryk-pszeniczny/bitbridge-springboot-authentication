@@ -7,10 +7,12 @@ import org.keycloak.admin.client.Keycloak;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.springframework.security.authentication.InternalAuthenticationServiceException;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
+import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -22,34 +24,55 @@ public class UserService {
     private final Keycloak keycloakAdmin;
 
     @Transactional
-    public User processOAuth2User(OAuth2UserRequest oAuth2UserRequest, OAuth2User oAuth2User) {
+    public User processOAuth2User(OAuth2UserRequest oAuth2UserRequest, OAuth2User oAuth2User, Map<String, Object> attributes) {
         try {
             String provider = oAuth2UserRequest.getClientRegistration().getRegistrationId();
-            User.AuthProvider authProvider = User.AuthProvider.valueOf(provider.toUpperCase());
-
-            String providerId = oAuth2User.getAttribute("sub") != null ?
-                    oAuth2User.getAttribute("sub") : oAuth2User.getAttribute("id");
-
-            Optional<User> userOptional = userRepository.findByProviderAndProviderId(authProvider, providerId);
-
+            User.AuthProvider authProvider;
+            try {
+                authProvider = User.AuthProvider.valueOf(provider.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                throw new OAuth2AuthenticationException("Unsupported provider: " + provider);
+            }
+            Optional<String> providerId = Optional.ofNullable(
+                    (attributes.get("sub") != null ?
+                                                attributes.get("sub") :
+                                                attributes.get("id")).toString()
+            );
+            if(providerId.isEmpty()) {
+                throw new OAuth2AuthenticationException("Provider ID not found in user attributes");
+            }
+            Optional<User> userOptional = userRepository.findByProviderAndProviderId(authProvider, providerId.get());
+            System.out.println(userOptional);
             if (userOptional.isPresent()) {
                 return userOptional.get();
-            } else {
-                return registerNewUser(oAuth2UserRequest, oAuth2User, authProvider, providerId);
             }
+            User user = registerNewUser(oAuth2User, authProvider, providerId, attributes);
+            System.out.println("User registered: " + user.getUsername());
+            System.out.println("Id: " + user.getId());
+            System.out.println("Email: " + user.getEmail());
+            System.out.println("First Name: " + user.getFirstName());
+            System.out.println("Last Name: " + user.getLastName());
+            System.out.println("Provider: " + user.getProvider());
+            System.out.println("Provider ID: " + user.getProviderId());
+            System.out.println("Username: " + user.getUsername());
+            System.out.println("Roles: " + user.getRoles());
+
+            return user;
         } catch (Exception ex) {
             throw new InternalAuthenticationServiceException(ex.getMessage(), ex.getCause());
         }
     }
 
-    private User registerNewUser(OAuth2UserRequest oAuth2UserRequest, OAuth2User oAuth2User,
-                                 User.AuthProvider provider, String providerId) {
+    private User registerNewUser(OAuth2User oAuth2User,
+                                 User.AuthProvider provider,
+                                 Optional<String> providerId,
+                                 Map<String, Object> attributes) {
         User user = new User();
         user.setProvider(provider);
-        user.setProviderId(providerId);
+        user.setProviderId(providerId.orElse("unknown"));
 
-        String email = oAuth2User.getAttribute("email");
-        String name = oAuth2User.getAttribute("name");
+        String email = attributes.get("email").toString();
+        String name = attributes.containsKey("name")?attributes.get("name").toString():"unknown";
 
         if (name != null) {
             String[] nameParts = name.split(" ");
@@ -60,10 +83,13 @@ public class UserService {
         }
 
         user.setEmail(email);
-        user.setUsername(email != null ? email : providerId);
+        user.setUsername(email);
         user.setRoles(Set.of("USER"));
-
-        return userRepository.save(user);
+        try {
+            return userRepository.save(user);
+        }catch (Exception e) {
+            throw new InternalAuthenticationServiceException("Error registering user in Keycloak: " + e.getMessage(), e);
+        }
     }
 
 

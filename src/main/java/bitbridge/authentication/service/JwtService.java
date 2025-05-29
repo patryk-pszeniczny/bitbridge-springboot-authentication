@@ -31,6 +31,7 @@ public class JwtService {
     private String jwtAudience;
 
     public String generateJwtToken(Authentication authentication) {
+        System.out.println("Generating JWT token for authentication: " + authentication);
         String username;
         List<String> roles;
         if(authentication.getPrincipal() instanceof UserDetails userDetails) {
