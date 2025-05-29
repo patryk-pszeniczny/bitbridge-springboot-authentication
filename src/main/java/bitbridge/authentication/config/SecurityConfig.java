@@ -27,7 +27,6 @@ public class SecurityConfig {
     private String[] allowedOrigins;
 
     private final JwtService jwtService;
-
     public SecurityConfig(JwtService jwtService) {
         this.jwtService = jwtService;
     }
@@ -38,7 +37,6 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                .cors().and()
                 .authorizeHttpRequests(authz -> authz
                         .requestMatchers("/api/auth/**", "/oauth2/**", "/login/oauth2/**")
                             .permitAll()
@@ -50,15 +48,22 @@ public class SecurityConfig {
                 )
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .oauth2Login(oauth2 -> oauth2
-                        .authorizationEndpoint(endpoint -> endpoint.baseUri("/api/oauth2/authorization"))
-                        .redirectionEndpoint(endpoint -> endpoint.baseUri("/api/login/oauth2/code/*"))
+                        .loginPage("http://localhost:5173")
+                        .authorizationEndpoint(endpoint -> {
+                            endpoint.baseUri("/oauth2/authorization");
+                        })
+                        .redirectionEndpoint(endpoint ->{
+                            endpoint.baseUri("/login/oauth2/code/*");
+                        })
                         .successHandler((request, response, authentication) -> {
                             String token = jwtService.generateJwtToken(authentication);
-                            System.out.println(token);
                             response.sendRedirect("http://localhost:5173/oauth2/success?token=" + token);
                         })
-                        .failureHandler((request, response, exception) ->
-                                response.sendRedirect("http://localhost:5173/"))
+                        .failureHandler((request, response, exception) -> {
+                            exception.printStackTrace(); // Debug helper :D
+                            response.sendRedirect("http://localhost:5173/?error");
+                        })
+
 
                 );
 
