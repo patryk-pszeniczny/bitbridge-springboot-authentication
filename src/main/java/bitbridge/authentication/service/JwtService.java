@@ -7,12 +7,13 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 
 import java.security.Key;
 import java.util.Date;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 public class JwtService {
@@ -30,14 +31,21 @@ public class JwtService {
     private String jwtAudience;
 
     public String generateJwtToken(Authentication authentication) {
-        UserDetailsImpl userPrincipal = (UserDetailsImpl) authentication.getPrincipal();
-
-        List<String> roles = userPrincipal.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority)
-                .collect(Collectors.toList());
-
+        String username;
+        List<String> roles;
+        if(authentication.getPrincipal() instanceof UserDetails userDetails) {
+            username = userDetails.getUsername();
+            roles = userDetails.getAuthorities().stream()
+                    .map(GrantedAuthority::getAuthority)
+                    .toList();
+        }else if(authentication.getPrincipal() instanceof OAuth2User oAuth2User) {
+            username = oAuth2User.getName();
+            roles = List.of("ROLE_USER"); // Default role for OAuth2 users
+        } else {
+            throw new IllegalArgumentException("Unsupported authentication principal type");
+        }
         return Jwts.builder()
-                .setSubject(userPrincipal.getUsername())
+                .setSubject(username)
                 .setIssuer(jwtIssuer)
                 .setAudience(jwtAudience)
                 .setIssuedAt(new Date())

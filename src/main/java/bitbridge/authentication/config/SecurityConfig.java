@@ -61,7 +61,7 @@ public class SecurityConfig {
                         })
                         .failureHandler((request, response, exception) -> {
                             exception.printStackTrace(); // Debug helper :D
-                            response.sendRedirect("http://localhost:5173/?error");
+                            response.sendRedirect("http://localhost:5173/login?error");
                         })
 
 
