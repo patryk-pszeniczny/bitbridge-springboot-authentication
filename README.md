@@ -1,25 +1,31 @@
 ![logo](https://imgur.com/6iItBJn.png)
 
-🧠 BitBridge Auth — login system made by a sleep-deprived dev tryna vibe
-So like... this was supposed to be a chill auth microservice 😎
-Now it’s a whole OAuth2 / Keycloak dungeon run and I forgot to bring a healer 💀
+🧠 BitBridge Auth — login system by a dev running on caffeine & vibes
 
-🔐 What it do tho?
-Handles loginz, sends tokenz, vibes with Keycloak like they BFFs 🤝
-Probably secure... maybe... idk I just copy-pasted half the config from StackOverflow 😅
-It works — as long as you don’t look too close 👀
+So this started as a “quick” auth microservice...  
+Now it’s a whole-ass OAuth2 dungeon crawler and I forgot to spec a healer 💀  
+Built with Spring Security, confusion, and questionable life choices.
+
+🔐 What it do?
+- Handles logins like a boss  
+- Tosses JWTs like candy 🍬  
+- Lowkey besties with Keycloak 🤝  
+- Might be secure... might be held together with duct tape and StackOverflow threads 😅
 
 👨‍💻 The code?
-Yes. It exists. It runs. It cries at night.
-First date with Spring Security so don’t judge the spaghetti yet 🍝
-I’m still figuring out wtf is going on with half of these filters 😭
+Yeah it runs. Yeah it cries at night.  
+My first date with Spring Security — and it’s already complicated af 🍝  
+Filters? Providers? Token converters?? bro idk I’m just trying my best 😭
 
 🚧 What’s next?
-Frontend coming sooooon™ 💻💅 (React + chaos)
-More features? More refactors? More caffeine-fueled breakdowns?
-Hell yeah. Stay tuned. 🔥🔥🔥
+- Frontend comin’ soon™ (React + vibes + chaos)  
+- More features? Probably.  
+- More refactors? Hopefully.  
+- More sleepless nights and inner screaming? Absolutely 🔥
 
-🧪 Learning project but also my emotional support app rn. Be kind. 💕
-🚀 Updates dropping soon — probably with bugs but also with love 💌
+🧪 It’s a learning project, but also my therapy session in code form.  
+💌 Expect bugs. Expect love. Updates dropping whenever I get my life together.
 
-![frontend](https://i.imgur.com/y8V2XB8.png)
+
+![frontend](https://i.imgur.com/hzdTbir.png)
+![dashboard](https://i.imgur.com/iHf00SH.png)
