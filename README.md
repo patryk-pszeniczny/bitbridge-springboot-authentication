@@ -22,4 +22,5 @@ Hell yeah. Stay tuned. 🔥🔥🔥
 🧪 Learning project but also my emotional support app rn. Be kind. 💕
 🚀 Updates dropping soon — probably with bugs but also with love 💌
 
-![frontend](https://i.imgur.com/y8V2XB8.png)
+![frontend](https://i.imgur.com/hzdTbir.png)
+![dashboard](https://i.imgur.com/iHf00SH.png)
