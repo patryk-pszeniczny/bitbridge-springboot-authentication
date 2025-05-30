@@ -35,17 +35,13 @@ public class User {
     private String firstName;
     private String lastName;
 
-    @Enumerated(EnumType.STRING)
-    private AuthProvider provider;
-
-    private String providerId;
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<AuthMethod> authMethods = new HashSet<>();
 
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"))
     @Column(name = "role")
     private Set<String> roles = new HashSet<>();
 
-    public enum AuthProvider {
-        LOCAL, GOOGLE, FACEBOOK, GITHUB, DISCORD, KEYCLOAK
-    }
+
 }

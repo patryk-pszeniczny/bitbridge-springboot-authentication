@@ -28,13 +28,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             if ("github".equals(userRequest.getClientRegistration().getRegistrationId())) {
                 githubEmail(userRequest, attributes);
             }
-            User user;
-            try {
-                 user = userService.processOAuth2User(userRequest, oAuth2User, attributes);
-            }catch (Exception exception){
-                System.out.println("Error processing OAuth2 user: " + exception.getMessage());
-                return null;
-            }
+            User user = userService.processOAuth2User(userRequest, oAuth2User, attributes);
             return new CustomOAuth2User(user, attributes);
         } catch (Exception ex) {
             throw new OAuth2AuthenticationException(ex.getMessage());
