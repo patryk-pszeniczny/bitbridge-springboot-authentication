@@ -36,9 +36,10 @@ public class SecurityConfig {
     }
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        System.out.println("Configuring SecurityFilterChain with allowed origins: " + String.join(", ", allowedOrigins));
         http
-                .cors()
-                .and()
+                .csrf().disable()
+                .cors().and()
                 .authorizeHttpRequests(authz -> authz
                         .requestMatchers("/api/auth/**", "/oauth2/**", "/login/oauth2/**")
                             .permitAll()
@@ -62,14 +63,9 @@ public class SecurityConfig {
                             response.sendRedirect("http://localhost:5173/oauth2/success?token=" + token);
                         })
                         .failureHandler((request, response, exception) -> {
-                            System.out.println("OAuth2 login failed: " + exception.getMessage());
-                            exception.printStackTrace(); // Debug helper :D
                             response.sendRedirect("http://localhost:5173/error");
                         })
-
-
                 );
-
         return http.build();
     }
 

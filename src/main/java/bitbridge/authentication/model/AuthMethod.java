@@ -21,7 +21,6 @@ public class AuthMethod {
     @Column(nullable = false)
     private AuthProviderEnum provider;
 
-    @Column(nullable = false)
     private String providerId;
 
     @JsonIgnore

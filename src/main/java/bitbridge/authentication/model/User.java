@@ -1,5 +1,6 @@
 package bitbridge.authentication.model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -32,8 +33,13 @@ public class User {
     @Column(unique = true)
     private String email;
 
+    @NotBlank
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    private String password;
+
     private String firstName;
     private String lastName;
+
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<AuthMethod> authMethods = new HashSet<>();

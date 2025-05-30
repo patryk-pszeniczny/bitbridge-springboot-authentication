@@ -31,7 +31,6 @@ public class JwtService {
     private String jwtAudience;
 
     public String generateJwtToken(Authentication authentication) {
-        System.out.println("Generating JWT token for authentication: " + authentication);
         String username;
         List<String> roles;
         if(authentication.getPrincipal() instanceof UserDetails userDetails) {
@@ -41,9 +40,12 @@ public class JwtService {
                     .toList();
         }else if(authentication.getPrincipal() instanceof OAuth2User oAuth2User) {
             username = oAuth2User.getName();
-            roles = List.of("ROLE_USER"); // Default role for OAuth2 users
+            roles = List.of("USER");
         } else {
-            throw new IllegalArgumentException("Unsupported authentication principal type");
+            username = authentication.getName();
+            roles = authentication.getAuthorities().stream()
+                    .map(GrantedAuthority::getAuthority)
+                    .toList();
         }
         return Jwts.builder()
                 .setSubject(username)

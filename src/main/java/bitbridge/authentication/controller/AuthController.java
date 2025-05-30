@@ -2,6 +2,7 @@ package bitbridge.authentication.controller;
 
 import bitbridge.authentication.model.User;
 import bitbridge.authentication.request.LoginRequest;
+import bitbridge.authentication.request.RegisterRequest;
 import bitbridge.authentication.response.AuthResponse;
 import bitbridge.authentication.service.JwtService;
 import bitbridge.authentication.service.UserDetailsImpl;
@@ -13,10 +14,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @RestController
@@ -35,14 +37,13 @@ public class AuthController {
                 new UsernamePasswordAuthenticationToken(
                         loginRequest.getUsername(),
                         loginRequest.getPassword()));
-
         SecurityContextHolder.getContext().setAuthentication(authentication);
-        String jwt = jwtService.generateJwtToken(authentication);
 
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-        List<String> roles = userDetails.getAuthorities().stream()
+        Set<String> roles = userDetails.getAuthorities().stream()
                 .map(item -> item.getAuthority())
-                .collect(Collectors.toList());
+                .collect(Collectors.toSet());
+        String jwt = jwtService.generateJwtToken(authentication);
 
         return ResponseEntity.ok(new AuthResponse(
                 jwt,
@@ -51,18 +52,37 @@ public class AuthController {
                 userDetails.getEmail(),
                 roles));
     }
+    @PostMapping("/register")
+    public ResponseEntity<?> registerUser(@Valid @RequestBody RegisterRequest registerRequest) {
+        System.out.println("Registering user: " + registerRequest.getUsername());
+        String username = registerRequest.getUsername();
+        String email = registerRequest.getEmail();
 
+        User isUserExists = userService.findByUserNameOrEmail(username, email).orElse(null);
+        if (isUserExists != null) {
+            return ResponseEntity.badRequest().body("User already exists with this email");
+        }
+        String password = registerRequest.getPassword();
+        User created = this.userService.proccessAuthUser(username, email, password);
+        Authentication authentication = new UsernamePasswordAuthenticationToken(
+                        email,
+                        password);
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+
+        String jwt = jwtService.generateJwtToken(authentication);
+        return ResponseEntity.ok(new AuthResponse(
+                jwt,
+                "Bearer",
+                username,
+                email,
+                created.getRoles()));
+    }
     @GetMapping("/me")
     public ResponseEntity<?> getCurrentUser(HttpServletRequest request) {
-        System.out.println("Fetching current user details...");
         String token = jwtService.parseJwt(request);
-        System.out.println("Token: " + token);
         if (token != null && jwtService.validateJwtToken(token)) {
             String username = jwtService.getUserNameFromJwtToken(token);
-            System.out.println("Username from token: " + username);
-            User user = userService.findByUsername(username)
-                    .orElseThrow(() -> new RuntimeException("User not found"));
-
+            User user = userService.findByUsername(username).orElseThrow(() -> new RuntimeException("User not found"));
             return ResponseEntity.ok(user);
         }
         return ResponseEntity.badRequest().body("Invalid token");
@@ -70,17 +90,12 @@ public class AuthController {
 
     @GetMapping("/oauth2/success")
     public ResponseEntity<?> oauth2Success(Authentication authentication) {
-        String jwt = jwtService.generateJwtToken(authentication);
-
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-        List<String> roles = userDetails.getAuthorities().stream()
-                .map(item -> item.getAuthority())
-                .collect(Collectors.toList());
-        System.out.println("OAuth2 Success: " + userDetails.getUsername() + ", Roles: " + roles);
-        // Redirect to the frontend with the JWT token
-        System.out.println("Generated JWT: " + jwt);
+        Set<String> roles = userDetails.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .collect(Collectors.toSet());
         return ResponseEntity.ok(new AuthResponse(
-                jwt,
+                jwtService.generateJwtToken(authentication),
                 "Bearer",
                 userDetails.getUsername(),
                 userDetails.getEmail(),

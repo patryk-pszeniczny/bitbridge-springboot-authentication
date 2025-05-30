@@ -5,6 +5,7 @@ import bitbridge.authentication.model.AuthProviderEnum;
 import bitbridge.authentication.model.User;
 import bitbridge.authentication.repository.AuthMethodRepository;
 import bitbridge.authentication.repository.UserRepository;
+import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.keycloak.admin.client.Keycloak;
@@ -30,6 +31,20 @@ public class UserService {
     private final Keycloak keycloakAdmin;
 
     @Transactional
+    public User proccessAuthUser(String username, String email, String password) {
+        try {
+            User user = registerNewUser(Map.of(
+                    "name", username,
+                    "email", email,
+                    "password", password
+            ));
+            addAuthMethod(user, AuthProviderEnum.LOCAL, null);
+            return user;
+        } catch (Exception ex) {
+            throw new InternalAuthenticationServiceException(ex.getMessage(), ex.getCause());
+        }
+    }
+    @Transactional
     public User processOAuth2User(OAuth2UserRequest oAuth2UserRequest, OAuth2User oAuth2User, Map<String, Object> attributes) {
         try {
             String provider = oAuth2UserRequest.getClientRegistration().getRegistrationId();
@@ -52,33 +67,36 @@ public class UserService {
                 return userOptionalProvider.get();
             }
             Optional<User> userOptionalEmail = userRepository.findByEmail(attributes.get("email").toString());
-            if( userOptionalEmail.isPresent()) {
+            if(userOptionalEmail.isPresent()) {
                 User user = userOptionalEmail.get();
                 addAuthMethod(user, authProvider, providerId.get());
                 return userRepository.save(user);
             }
-            return registerNewUser(authProvider, providerId, attributes);
+            User user = registerNewUser(attributes);
+            addAuthMethod(user, authProvider, providerId.get());
+            return user;
         } catch (Exception ex) {
             throw new InternalAuthenticationServiceException(ex.getMessage(), ex.getCause());
         }
     }
 
-    private User registerNewUser(AuthProviderEnum authProviderEnum,
-                                 Optional<String> providerId,
-                                 Map<String, Object> attributes) {
+    private User registerNewUser(Map<String, Object> attributes) {
         User user = new User();
-        addAuthMethod(user, authProviderEnum, providerId.get());
         String email = attributes.get("email").toString();
-        String name = attributes.containsKey("name")?attributes.get("name").toString():"unknown";
-        if (name != null) {
+        System.out.println(attributes);
+        String name = attributes.containsKey("name") ? attributes.get("name").toString() : email;
+        System.out.println("Registering new user: " + name + ", email: " + email);
+        String password = attributes.containsKey("password") ? attributes.get("password").toString() : null;
+        if (name != null && name.contains(" ")) {
             String[] nameParts = name.split(" ");
             user.setFirstName(nameParts[0]);
             if (nameParts.length > 1) {
                 user.setLastName(nameParts[1]);
             }
         }
+        user.setPassword(password);
         user.setEmail(email);
-        user.setUsername(email);
+        user.setUsername(name);
         user.setRoles(Set.of("USER"));
         return userRepository.save(user);
     }
@@ -106,6 +124,10 @@ public class UserService {
         return userRepository.findByUsername(username);
     }
 
+    @Transactional(readOnly = true)
+    public Optional<User> findByUserNameOrEmail(@NotBlank String userName, @NotBlank String email) {
+        return userRepository.findByUsernameOrEmail(userName, email);
+    }
     @Transactional(readOnly = true)
     public Optional<User> findByEmail(String email) {
         return userRepository.findByEmail(email);
