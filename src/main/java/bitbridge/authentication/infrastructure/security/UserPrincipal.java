@@ -1,4 +1,4 @@
-package bitbridge.authentication.service;
+package bitbridge.authentication.infrastructure.security;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -10,7 +10,7 @@ import java.util.UUID;
 
 @Getter
 @AllArgsConstructor
-public class UserDetailsImpl implements UserDetails {
+public class UserPrincipal implements UserDetails {
     private UUID id;
     private String username;
     private String email;

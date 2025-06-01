@@ -1,4 +1,4 @@
-package bitbridge.authentication.request;
+package bitbridge.authentication.web.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
@@ -6,7 +6,7 @@ import lombok.Data;
 @Data
 public class LoginRequest {
     @NotBlank
-    private String username;
+    private String email;
     @NotBlank
     private String password;
 }

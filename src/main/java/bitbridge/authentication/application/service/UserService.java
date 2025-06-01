@@ -1,10 +1,10 @@
-package bitbridge.authentication.service;
+package bitbridge.authentication.application.service;
 
-import bitbridge.authentication.model.AuthMethod;
-import bitbridge.authentication.model.AuthProviderEnum;
-import bitbridge.authentication.model.User;
-import bitbridge.authentication.repository.AuthMethodRepository;
-import bitbridge.authentication.repository.UserRepository;
+import bitbridge.authentication.domain.model.User;
+import bitbridge.authentication.domain.model.UserAuthMethod;
+import bitbridge.authentication.domain.repository.UserAuthMethodRepository;
+import bitbridge.authentication.domain.repository.UserRepository;
+import bitbridge.authentication.domain.valueobject.AuthProvider;
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,7 +27,7 @@ import java.util.Set;
 public class UserService {
 
     private final UserRepository userRepository;
-    private final AuthMethodRepository authMethodRepository;
+    private final UserAuthMethodRepository authMethodRepository;
     private final Keycloak keycloakAdmin;
 
     @Transactional
@@ -38,7 +38,7 @@ public class UserService {
                     "email", email,
                     "password", password
             ));
-            addAuthMethod(user, AuthProviderEnum.LOCAL, null);
+            addAuthMethod(user, AuthProvider.LOCAL, null);
             return user;
         } catch (Exception ex) {
             throw new InternalAuthenticationServiceException(ex.getMessage(), ex.getCause());
@@ -48,9 +48,9 @@ public class UserService {
     public User processOAuth2User(OAuth2UserRequest oAuth2UserRequest, OAuth2User oAuth2User, Map<String, Object> attributes) {
         try {
             String provider = oAuth2UserRequest.getClientRegistration().getRegistrationId();
-            AuthProviderEnum authProvider;
+            AuthProvider authProvider;
             try {
-                authProvider = AuthProviderEnum.valueOf(provider.toUpperCase());
+                authProvider = AuthProvider.valueOf(provider.toUpperCase());
             } catch (IllegalArgumentException e) {
                 throw new OAuth2AuthenticationException("Unsupported provider: " + provider);
             }
@@ -101,8 +101,8 @@ public class UserService {
         return userRepository.save(user);
     }
 
-    public void addAuthMethod(User user, AuthProviderEnum provider, String providerId) {
-        AuthMethod method = new AuthMethod();
+    public void addAuthMethod(User user, AuthProvider provider, String providerId) {
+        UserAuthMethod method = new UserAuthMethod();
         method.setProvider(provider);
         method.setProviderId(providerId);
         method.setUser(user);

@@ -1,7 +1,7 @@
-package bitbridge.authentication.service;
+package bitbridge.authentication.infrastructure.security;
 
-import bitbridge.authentication.model.CustomOAuth2User;
-import bitbridge.authentication.model.User;
+import bitbridge.authentication.application.service.UserService;
+import bitbridge.authentication.domain.model.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.*;
@@ -16,7 +16,7 @@ import java.util.*;
 
 @Service
 @RequiredArgsConstructor
-public class CustomOAuth2UserService extends DefaultOAuth2UserService {
+public class OAuth2PrincipalService extends DefaultOAuth2UserService {
 
     private final UserService userService;
     private final RestTemplate restTemplate = new RestTemplate();
@@ -29,7 +29,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
                 githubEmail(userRequest, attributes);
             }
             User user = userService.processOAuth2User(userRequest, oAuth2User, attributes);
-            return new CustomOAuth2User(user, attributes);
+            return new OAuth2UserPrincipal(user, attributes);
         } catch (Exception ex) {
             throw new OAuth2AuthenticationException(ex.getMessage());
         }

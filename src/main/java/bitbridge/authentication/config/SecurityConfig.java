@@ -1,6 +1,6 @@
 package bitbridge.authentication.config;
 
-import bitbridge.authentication.service.JwtService;
+import bitbridge.authentication.infrastructure.security.JwtService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

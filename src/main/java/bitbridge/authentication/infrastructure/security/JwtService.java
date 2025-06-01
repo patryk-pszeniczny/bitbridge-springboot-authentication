@@ -1,4 +1,4 @@
-package bitbridge.authentication.service;
+package bitbridge.authentication.infrastructure.security;
 
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;

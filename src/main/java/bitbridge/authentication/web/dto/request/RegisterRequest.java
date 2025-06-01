@@ -1,4 +1,4 @@
-package bitbridge.authentication.request;
+package bitbridge.authentication.web.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
