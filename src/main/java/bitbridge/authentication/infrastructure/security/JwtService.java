@@ -3,7 +3,6 @@ package bitbridge.authentication.infrastructure.security;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
-import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -66,11 +65,9 @@ public class JwtService {
         return Jwts.parserBuilder().setSigningKey(key()).build()
                 .parseClaimsJws(token).getBody().getSubject();
     }
-    public String parseJwt(HttpServletRequest request) {
-        String headerAuth = request.getHeader("Authorization");
-
+    public String parseJwt(String headerAuth) {
         if (headerAuth != null && headerAuth.startsWith("Bearer ")) {
-            return headerAuth.substring(7); // obcięcie "Bearer "
+            return headerAuth.substring(7);
         }
 
         return null;

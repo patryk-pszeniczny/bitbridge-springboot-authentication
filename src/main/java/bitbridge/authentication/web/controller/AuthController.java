@@ -9,7 +9,6 @@ import bitbridge.authentication.web.dto.request.LoginRequest;
 import bitbridge.authentication.web.dto.request.RegisterRequest;
 import bitbridge.authentication.web.dto.response.LoginResponse;
 import bitbridge.authentication.web.dto.response.RegisterResponse;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -68,30 +67,33 @@ public class AuthController {
     public ResponseEntity<RegisterResponse> registerUser(@Valid @RequestBody RegisterRequest registerRequest) {
         String username = registerRequest.getUsername();
         String email = registerRequest.getEmail();
-
         User isUserExists = userService.findByUserNameOrEmail(username, email).orElse(null);
         if (isUserExists != null) {
             RegisterResponse registerResponse = new RegisterResponse();
             registerResponse.setMessage("User already exists with username or email");
             return ResponseEntity.badRequest().body(registerResponse);
         }
+
         String password = registerRequest.getPassword();
-        User created = this.userService.proccessAuthUser(username, email, password);
 
         Authentication authentication = new UsernamePasswordAuthenticationToken(email, password);
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
-        String jwt = jwtService.generateJwtToken(authentication);
+        User user = this.userService.proccessAuthUser(username, email, password);
+
         RegisterResponse registerResponse = new RegisterResponse();
+        registerResponse.setEmail(user.getEmail());
+        registerResponse.setAccessToken(jwtService.generateJwtToken(authentication));
+        registerResponse.setRoles(user.getRoles().stream().toList());
         registerResponse.setMessage("User registered successfully");
         return ResponseEntity.status(HttpStatus.CREATED).body(registerResponse);
     }
     @GetMapping("/me")
-    public ResponseEntity<?> getCurrentUser(HttpServletRequest request) {
-        String token = jwtService.parseJwt(request);
+    public ResponseEntity<?> getCurrentUser(@RequestHeader("Authorization") String jwt) {
+        String token = jwtService.parseJwt(jwt);
         if (token != null && jwtService.validateJwtToken(token)) {
             String username = jwtService.getUserNameFromJwtToken(token);
-            User user = userService.findByUsername(username).orElseThrow(() -> new RuntimeException("User not found"));
+            User user = userService.findByEmail(username).orElseThrow(() -> new RuntimeException("User not found"));
             return ResponseEntity.ok(user);
         }
         return ResponseEntity.badRequest().body("Invalid token");

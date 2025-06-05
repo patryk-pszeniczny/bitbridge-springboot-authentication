@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.springframework.security.authentication.InternalAuthenticationServiceException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.user.OAuth2User;
@@ -29,6 +30,7 @@ public class UserService {
     private final UserRepository userRepository;
     private final UserAuthMethodRepository authMethodRepository;
     private final Keycloak keycloakAdmin;
+    private final PasswordEncoder passwordEncoder;
 
     @Transactional
     public User proccessAuthUser(String username, String email, String password) {
@@ -83,9 +85,7 @@ public class UserService {
     private User registerNewUser(Map<String, Object> attributes) {
         User user = new User();
         String email = attributes.get("email").toString();
-        System.out.println(attributes);
         String name = attributes.containsKey("name") ? attributes.get("name").toString() : email;
-        System.out.println("Registering new user: " + name + ", email: " + email);
         String password = attributes.containsKey("password") ? attributes.get("password").toString() : null;
         if (name != null && name.contains(" ")) {
             String[] nameParts = name.split(" ");
@@ -94,7 +94,7 @@ public class UserService {
                 user.setLastName(nameParts[1]);
             }
         }
-        user.setPassword(password);
+        user.setPassword(passwordEncoder.encode(password));
         user.setEmail(email);
         user.setUsername(name);
         user.setRoles(Set.of("USER"));

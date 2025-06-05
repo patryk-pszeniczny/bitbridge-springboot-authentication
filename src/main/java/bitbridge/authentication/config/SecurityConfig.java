@@ -51,7 +51,7 @@ public class SecurityConfig {
                 )
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .oauth2Login(oauth2 -> oauth2
-                        .loginPage("http://localhost:5173")
+                        //.loginPage("http://localhost:5173")
                         .authorizationEndpoint(endpoint -> {
                             endpoint.baseUri("/oauth2/authorization");
                         })
