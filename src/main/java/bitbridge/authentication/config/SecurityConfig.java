@@ -60,7 +60,7 @@ public class SecurityConfig {
                         })
                         .successHandler((request, response, authentication) -> {
                             String token = jwtService.generateJwtToken(authentication);
-                            response.sendRedirect("http://localhost:5173/oauth2/success?token=" + token);
+                            response.sendRedirect("http://localhost:5173/?token=" + token);
                         })
                         .failureHandler((request, response, exception) -> {
                             response.sendRedirect("http://localhost:5173/error");

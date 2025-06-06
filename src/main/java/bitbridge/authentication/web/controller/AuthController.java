@@ -35,6 +35,7 @@ public class AuthController {
     private final PasswordEncoder passwordEncoder;
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
+        System.out.println("Login request received: " + loginRequest);
         String email = loginRequest.getEmail();
         String password = loginRequest.getPassword();
         UserDetails userDetails = customUserDetailsService.loadUserByUsername(email);
@@ -88,17 +89,6 @@ public class AuthController {
         registerResponse.setMessage("User registered successfully");
         return ResponseEntity.status(HttpStatus.CREATED).body(registerResponse);
     }
-    @GetMapping("/me")
-    public ResponseEntity<?> getCurrentUser(@RequestHeader("Authorization") String jwt) {
-        String token = jwtService.parseJwt(jwt);
-        if (token != null && jwtService.validateJwtToken(token)) {
-            String username = jwtService.getUserNameFromJwtToken(token);
-            User user = userService.findByEmail(username).orElseThrow(() -> new RuntimeException("User not found"));
-            return ResponseEntity.ok(user);
-        }
-        return ResponseEntity.badRequest().body("Invalid token");
-    }
-
     @GetMapping("/oauth2/success")
     public ResponseEntity<?> oauth2Success(Authentication authentication) {
         UserPrincipal userDetails = (UserPrincipal) authentication.getPrincipal();

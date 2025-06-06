@@ -28,7 +28,7 @@ public class OAuth2PrincipalService extends DefaultOAuth2UserService {
             if ("github".equals(userRequest.getClientRegistration().getRegistrationId())) {
                 githubEmail(userRequest, attributes);
             }
-            User user = userService.processOAuth2User(userRequest, oAuth2User, attributes);
+            User user = userService.processOAuth2User(userRequest, attributes);
             return new OAuth2UserPrincipal(user, attributes);
         } catch (Exception ex) {
             throw new OAuth2AuthenticationException(ex.getMessage());

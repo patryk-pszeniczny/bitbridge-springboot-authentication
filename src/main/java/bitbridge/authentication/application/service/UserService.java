@@ -14,7 +14,6 @@ import org.springframework.security.authentication.InternalAuthenticationService
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
-import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -47,7 +46,7 @@ public class UserService {
         }
     }
     @Transactional
-    public User processOAuth2User(OAuth2UserRequest oAuth2UserRequest, OAuth2User oAuth2User, Map<String, Object> attributes) {
+    public User processOAuth2User(OAuth2UserRequest oAuth2UserRequest, Map<String, Object> attributes) {
         try {
             String provider = oAuth2UserRequest.getClientRegistration().getRegistrationId();
             AuthProvider authProvider;
