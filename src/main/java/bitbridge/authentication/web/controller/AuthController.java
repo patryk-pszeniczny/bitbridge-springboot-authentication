@@ -90,7 +90,7 @@ public class AuthController {
         return ResponseEntity.status(HttpStatus.CREATED).body(registerResponse);
     }
     @GetMapping("/oauth2/success")
-    public ResponseEntity<?> oauth2Success(Authentication authentication) {
+    public ResponseEntity<LoginResponse> oauth2Success(Authentication authentication) {
         UserPrincipal userDetails = (UserPrincipal) authentication.getPrincipal();
         Set<String> roles = userDetails.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)

@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -19,4 +20,6 @@ public interface UserAuthMethodRepository extends JpaRepository<UserAuthMethod, 
             @Param("providerId") String providerId
     );
     Optional<UserAuthMethod> findByProviderAndProviderId(AuthProvider provider, String providerId);
+    Optional<UserAuthMethod> findByProviderId(String providerId);
+    Optional<List<UserAuthMethod>> findAllByUserId(UUID user_id);
 }

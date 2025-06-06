@@ -1,5 +1,6 @@
 package bitbridge.authentication.infrastructure.security;
 
+import bitbridge.authentication.exception.InvalidTokenException;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
@@ -69,22 +70,23 @@ public class JwtService {
         if (headerAuth != null && headerAuth.startsWith("Bearer ")) {
             return headerAuth.substring(7);
         }
-
         return null;
     }
-
+    public String getCorrectToken(String string){
+        String token = parseJwt(string);
+        if(token == null){
+            throw new InvalidTokenException("Invalid token format");
+        }
+        if (!validateJwtToken(token)) {
+            throw new InvalidTokenException("Invalid token");
+        }
+        return getUserNameFromJwtToken(token);
+    }
     public boolean validateJwtToken(String authToken) {
         try {
             Jwts.parserBuilder().setSigningKey(key()).build().parse(authToken);
             return true;
-        } catch (MalformedJwtException e) {
-            // log
-        } catch (ExpiredJwtException e) {
-            // log
-        } catch (UnsupportedJwtException e) {
-            // log
-        } catch (IllegalArgumentException e) {
-            // log
+        } catch (MalformedJwtException | ExpiredJwtException | UnsupportedJwtException | IllegalArgumentException ignored) {
         }
         return false;
     }

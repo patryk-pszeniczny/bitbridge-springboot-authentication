@@ -41,7 +41,8 @@ public class SecurityConfig {
                 .csrf().disable()
                 .cors().and()
                 .authorizeHttpRequests(authz -> authz
-                        .requestMatchers("/api/auth/**", "/oauth2/**", "/login/oauth2/**")
+                        .requestMatchers("/api/auth/**", "/api/provider/**", "/api/user/**",
+                                "/oauth2/**", "/login/oauth2/**")
                             .permitAll()
                         .requestMatchers("/api/public/**")
                             .permitAll()
@@ -51,7 +52,7 @@ public class SecurityConfig {
                 )
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .oauth2Login(oauth2 -> oauth2
-                        //.loginPage("http://localhost:5173")
+                        .loginPage("http://localhost:5173")
                         .authorizationEndpoint(endpoint -> {
                             endpoint.baseUri("/oauth2/authorization");
                         })
