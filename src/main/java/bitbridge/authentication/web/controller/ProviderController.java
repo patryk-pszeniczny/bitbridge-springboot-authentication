@@ -31,7 +31,7 @@ public class ProviderController {
 //                .orElseThrow(() -> new UserNotFoundException("Provider not found with ID: " + provider_id));
 //        return ResponseEntity.ok(authMethod);
 //    }
-    @PostMapping("/user")
+    @GetMapping("/user")
     public ResponseEntity<List<UserAuthMethod>> userProviders(
             @RequestHeader("Authorization") String jwt) {
         String email = jwtService.getCorrectToken(jwt);
