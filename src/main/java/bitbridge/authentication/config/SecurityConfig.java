@@ -1,6 +1,9 @@
 package bitbridge.authentication.config;
 
-import bitbridge.authentication.infrastructure.security.JwtService;
+import bitbridge.authentication.config.handler.JwtOAuth2FailureHandler;
+import bitbridge.authentication.config.handler.JwtOAuth2SuccessHandler;
+import bitbridge.authentication.config.policy.CorsPolicy;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -8,82 +11,61 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-
-import java.util.Arrays;
-import java.util.List;
 
 @Configuration
 @EnableWebSecurity
+@RequiredArgsConstructor
 public class SecurityConfig {
 
     @Value("${cors.allowed-origins}")
     private String[] allowedOrigins;
 
-    private final JwtService jwtService;
-    public SecurityConfig(JwtService jwtService) {
-        this.jwtService = jwtService;
-    }
+    private final CorsPolicy corsPolicy;
+    private final JwtOAuth2SuccessHandler successHandler;
+    private final JwtOAuth2FailureHandler failureHandler;
+
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
     }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        return corsPolicy.createCorsConfigurationSource(allowedOrigins);
+    }
+
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        System.out.println("Configuring SecurityFilterChain with allowed origins: " + String.join(", ", allowedOrigins));
         http
-                .csrf().disable()
-                .cors().and()
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(authz -> authz
                         .requestMatchers("/api/auth/**", "/api/provider/**", "/api/user/**",
-                                "/oauth2/**", "/login/oauth2/**")
-                            .permitAll()
-                        .requestMatchers("/api/public/**")
-                            .permitAll()
+                                "/oauth2/**", "/login/oauth2/**", "/api/public/**")
+                        .permitAll()
                         .requestMatchers("/api/admin/**")
-                            .hasRole("ADMIN")
+                        .hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .oauth2Login(oauth2 -> oauth2
                         .loginPage("http://localhost:5173")
-                        .authorizationEndpoint(endpoint -> {
-                            endpoint.baseUri("/oauth2/authorization");
-                        })
-                        .redirectionEndpoint(endpoint ->{
-                            endpoint.baseUri("/login/oauth2/code/*");
-                        })
-                        .successHandler((request, response, authentication) -> {
-                            String token = jwtService.generateJwtToken(authentication);
-                            response.sendRedirect("http://localhost:5173/?token=" + token);
-                        })
-                        .failureHandler((request, response, exception) -> {
-                            response.sendRedirect("http://localhost:5173/error");
-                        })
+                        .authorizationEndpoint(endp -> endp.baseUri("/oauth2/authorization"))
+                        .redirectionEndpoint(endp -> endp.baseUri("/login/oauth2/code/*"))
+                        .successHandler(successHandler)
+                        .failureHandler(failureHandler)
                 );
         return http.build();
-    }
-
-    @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(Arrays.asList(allowedOrigins));
-        config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        config.setAllowedHeaders(Arrays.asList("authorization", "content-type", "x-auth-token"));
-        config.setExposedHeaders(List.of("x-auth-token"));
-        config.setAllowCredentials(true);
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", config);
-        return source;
-    }
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
     }
 }

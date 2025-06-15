@@ -78,7 +78,7 @@ public class JwtService {
             throw new InvalidTokenException("Invalid token format");
         }
         if (!validateJwtToken(token)) {
-            throw new InvalidTokenException("Invalid token");
+            throw new InvalidTokenException("Invalid token "+token);
         }
         return getUserNameFromJwtToken(token);
     }
