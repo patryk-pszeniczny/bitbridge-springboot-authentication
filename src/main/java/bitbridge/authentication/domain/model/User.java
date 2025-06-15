@@ -8,6 +8,7 @@ import jakarta.validation.constraints.Size;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 import org.hibernate.annotations.GenericGenerator;
 
 import java.util.HashSet;
@@ -19,12 +20,14 @@ import java.util.UUID;
 @Entity
 @Table(name = "users")
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@ToString(exclude = {"password", "authMethods"})
 public class User {
 
     @Id
     @GeneratedValue(generator = "UUID")
     @GenericGenerator(name = "UUID", strategy = "org.hibernate.id.UUIDGenerator")
     @Column(updatable = false, nullable = false)
+    @EqualsAndHashCode.Include
     private UUID id;
 
     @NotBlank
@@ -45,13 +48,16 @@ public class User {
     private String lastName;
 
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private Set<UserAuthMethod> authMethods = new HashSet<>();
 
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"))
-    @Column(name = "role")
+    @Column(name = "role", nullable = false)
     private Set<String> roles = new HashSet<>();
 
-
+    public void addAuthMethod(UserAuthMethod method) {
+        method.setUser(this);
+        authMethods.add(method);
+    }
 }
