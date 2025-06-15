@@ -1,4 +1,4 @@
-package bitbridge.authentication.config;
+package bitbridge.authentication.infrastructure.external.keycloak;
 
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.KeycloakBuilder;
