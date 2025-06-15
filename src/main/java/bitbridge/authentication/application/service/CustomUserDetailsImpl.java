@@ -2,7 +2,8 @@ package bitbridge.authentication.application.service;
 
 import bitbridge.authentication.domain.model.User;
 import bitbridge.authentication.domain.repository.UserRepository;
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -15,9 +16,13 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class CustomUserDetailsImpl implements UserDetailsService {
     private UserRepository userRepository;
+
+    @Value("${app.default.role.prefix}")
+    private String defaultRolePrefix;
+
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         Optional<User> user = userRepository.findByEmail(username);
@@ -25,7 +30,7 @@ public class CustomUserDetailsImpl implements UserDetailsService {
             throw new UsernameNotFoundException("User not found with email: " + username);
         }
         List<GrantedAuthority> authorityList = user.get().getRoles().stream()
-                .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
+                .map(role -> new SimpleGrantedAuthority(defaultRolePrefix + role))
                 .collect(Collectors.toList());
         return new org.springframework.security.core.userdetails.User(
                 user.get().getEmail(),

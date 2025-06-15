@@ -1,6 +1,7 @@
 package bitbridge.authentication.application.service.factory;
 
 import bitbridge.authentication.domain.model.User;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
@@ -9,6 +10,9 @@ import java.util.Set;
 
 @Component
 public class UserRegistrationFactory {
+    @Value("${app.default.user.role:USER}")
+    private String defaultUserRole;
+
     public User createFromCredentials(String name, String email, String password, PasswordEncoder encoder) {
         User user = buildBasicUser(name, email);
         user.setPassword(encoder.encode(password));
@@ -28,7 +32,7 @@ public class UserRegistrationFactory {
         User user = new User();
         user.setEmail(email);
         user.setUsername(name);
-        user.setRoles(Set.of("USER"));
+        user.setRoles(Set.of(defaultUserRole));
 
         if (name.contains(" ")) {
             String[] parts = name.split(" ");
