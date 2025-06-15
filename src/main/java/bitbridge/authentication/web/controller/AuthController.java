@@ -17,6 +17,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
@@ -36,9 +37,9 @@ public class AuthController {
         String email = loginRequest.getEmail();
         String password = loginRequest.getPassword();
 
-        UserPrincipal userDetails;
+        UserDetails userDetails;
         try {
-            userDetails = (UserPrincipal) userDetailsService.loadUserByUsername(email);
+            userDetails = userDetailsService.loadUserByUsername(email);
         } catch (bitbridge.authentication.exception.UserNotFoundException e) {
             return unauthorized("Invalid email or password");
         }
@@ -78,7 +79,7 @@ public class AuthController {
         );
 
         Authentication authentication = new UsernamePasswordAuthenticationToken(
-                user.getUsername(), null, user.getRoles().stream()
+                user.getEmail(), null, user.getRoles().stream()
                 .map(role -> (GrantedAuthority) () -> "ROLE_" + role)
                 .toList()
         );
