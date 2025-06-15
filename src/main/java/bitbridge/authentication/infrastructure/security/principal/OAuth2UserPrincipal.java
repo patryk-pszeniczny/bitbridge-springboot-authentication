@@ -2,6 +2,7 @@ package bitbridge.authentication.infrastructure.security.principal;
 
 import bitbridge.authentication.domain.model.User;
 import lombok.Getter;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.core.user.OAuth2User;
@@ -11,6 +12,10 @@ import java.util.Map;
 
 @Getter
 public class OAuth2UserPrincipal implements OAuth2User {
+    @Value("${app.default.role.prefix}")
+    private String defaultRolePrefix;
+
+
     private final User user;
     private final Map<String, Object> attributes;
 
@@ -27,7 +32,7 @@ public class OAuth2UserPrincipal implements OAuth2User {
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return user.getRoles().stream()
-                .map(role -> new SimpleGrantedAuthority("ROLE_" + role.toUpperCase()))
+                .map(role -> new SimpleGrantedAuthority(defaultRolePrefix + role.toUpperCase()))
                 .toList();
     }
 

@@ -2,6 +2,7 @@ package bitbridge.authentication.infrastructure.external.github;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.*;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
@@ -21,6 +22,9 @@ public class GithubEmailFetcher {
 
     private final RestTemplate restTemplate;
 
+    @Value("${app.github.api.email.base-url:https://api.github.com/user/emails}")
+    private String githubApiBaseUrl;
+
     public void enrichWithPrimaryEmail(OAuth2UserRequest userRequest, Map<String, Object> attributes) {
         String token = userRequest.getAccessToken().getTokenValue();
 
@@ -30,7 +34,7 @@ public class GithubEmailFetcher {
         HttpEntity<Void> entity = new HttpEntity<>(headers);
 
         ResponseEntity<List<Map<String, Object>>> response = restTemplate.exchange(
-                "https://api.github.com/user/emails",
+                githubApiBaseUrl,
                 HttpMethod.GET,
                 entity,
                 new ParameterizedTypeReference<>() {}
