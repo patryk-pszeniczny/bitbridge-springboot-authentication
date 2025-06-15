@@ -1,5 +1,6 @@
 package bitbridge.authentication.application.service;
 
+import bitbridge.authentication.application.service.auth.UserAuthMethodAssigner;
 import bitbridge.authentication.application.service.factory.UserRegistrationFactory;
 import bitbridge.authentication.domain.model.User;
 import bitbridge.authentication.domain.repository.UserAuthMethodRepository;
@@ -15,8 +16,7 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 class UserServiceTest {
 
@@ -24,6 +24,7 @@ class UserServiceTest {
     @Mock private UserAuthMethodRepository authMethodRepository;
     @Mock private PasswordEncoder passwordEncoder;
     @Mock private UserRegistrationFactory registrationFactory;
+    @Mock private UserAuthMethodAssigner authMethodAssigner;
     @InjectMocks private UserAuthenticationService userService;
 
     @BeforeEach
@@ -48,6 +49,7 @@ class UserServiceTest {
         when(registrationFactory.createFromCredentials(username, email, rawPassword, passwordEncoder))
                 .thenReturn(dummyUser);
         when(userRepository.save(any(User.class))).thenAnswer(i -> i.getArgument(0));
+        doNothing().when(authMethodAssigner).assign(any(), any(), any());
 
         // when
         User result = userService.proccessAuthUser(username, email, rawPassword);
