@@ -22,6 +22,25 @@ import org.springframework.web.cors.CorsConfigurationSource;
 @EnableWebSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
+    @Value("${app.oauth2.login-page:http://localhost:5173}")
+    private String oauth2LoginPage;
+
+    @Value("${app.oauth2.user-request-matchers}")
+    private String[] requestUserMatchers;
+
+    @Value("${app.oauth2.admin-request-matchers}")
+    private String[] requestAdminMatchers;
+
+    @Value("${app.default.admin.role}")
+    private String defaultAdminRole;
+
+    @Value("${app.oauth2.authorization-endpoint}")
+    private String authorizationEndpoint;
+
+    @Value("${app.oauth2.redirection-endpoint}")
+    private String redirectionEndpoint;
+
+
     private final CorsPolicy corsPolicy;
     private final JwtOAuth2SuccessHandler successHandler;
     private final JwtOAuth2FailureHandler failureHandler;
@@ -47,18 +66,17 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(authz -> authz
-                        .requestMatchers("/api/auth/**", "/api/provider/**", "/api/user/**",
-                                "/oauth2/**", "/login/oauth2/**", "/api/public/**")
-                        .permitAll()
-                        .requestMatchers("/api/admin/**")
-                        .hasRole("ADMIN")
+                        .requestMatchers(requestUserMatchers)
+                            .permitAll()
+                        .requestMatchers(requestAdminMatchers)
+                            .hasRole(defaultAdminRole)
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .oauth2Login(oauth2 -> oauth2
-                        .loginPage("http://localhost:5173")
-                        .authorizationEndpoint(endp -> endp.baseUri("/oauth2/authorization"))
-                        .redirectionEndpoint(endp -> endp.baseUri("/login/oauth2/code/*"))
+                        .loginPage(oauth2LoginPage)
+                        .authorizationEndpoint(endp -> endp.baseUri(authorizationEndpoint))
+                        .redirectionEndpoint(endp -> endp.baseUri(redirectionEndpoint))
                         .successHandler(successHandler)
                         .failureHandler(failureHandler)
                 );
