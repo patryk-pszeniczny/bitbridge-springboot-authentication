@@ -34,7 +34,7 @@ public class ProviderController {
     @GetMapping("/user")
     public ResponseEntity<List<UserAuthMethod>> userProviders(
             @RequestHeader("Authorization") String jwt) {
-        String email = jwtService.getCorrectToken(jwt);
+        String email = jwtService.extractAndValidateToken(jwt);
         User user = userService.findByEmail(email).orElseThrow(() -> new UserNotFoundException("User not found with email: " + email));
         List<UserAuthMethod> authMethods = userAuthMethodRepository.findAllByUserId(user.getId())
                         .orElseThrow(() -> new UserNotFoundException("No providers found for user with ID: " + user.getId()));

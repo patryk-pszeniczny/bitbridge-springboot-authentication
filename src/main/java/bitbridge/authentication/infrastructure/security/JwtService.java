@@ -31,63 +31,74 @@ public class JwtService {
     private String jwtAudience;
 
     public String generateJwtToken(Authentication authentication) {
-        String username;
-        List<String> roles;
-        if(authentication.getPrincipal() instanceof UserDetails userDetails) {
-            username = userDetails.getUsername();
-            roles = userDetails.getAuthorities().stream()
-                    .map(GrantedAuthority::getAuthority)
-                    .toList();
-        }else if(authentication.getPrincipal() instanceof OAuth2User oAuth2User) {
-            username = oAuth2User.getName();
-            roles = List.of("USER");
-        } else {
-            username = authentication.getName();
-            roles = authentication.getAuthorities().stream()
-                    .map(GrantedAuthority::getAuthority)
-                    .toList();
-        }
+        String username = resolveUsername(authentication);
+        List<String> roles = resolveRoles(authentication);
+
         return Jwts.builder()
                 .setSubject(username)
                 .setIssuer(jwtIssuer)
                 .setAudience(jwtAudience)
                 .setIssuedAt(new Date())
-                .setExpiration(new Date((new Date()).getTime() + jwtExpirationMs))
+                .setExpiration(new Date(System.currentTimeMillis() + jwtExpirationMs))
                 .claim("roles", roles)
                 .signWith(key(), SignatureAlgorithm.HS256)
                 .compact();
     }
 
-    private Key key() {
-        return Keys.hmacShaKeyFor(Decoders.BASE64.decode(jwtSecret));
+    public String getUsernameFromJwtToken(String token) {
+        return parseClaims(token).getSubject();
     }
-
-    public String getUserNameFromJwtToken(String token) {
-        return Jwts.parserBuilder().setSigningKey(key()).build()
-                .parseClaimsJws(token).getBody().getSubject();
-    }
-    public String parseJwt(String headerAuth) {
+    public String extractToken(String headerAuth) {
         if (headerAuth != null && headerAuth.startsWith("Bearer ")) {
             return headerAuth.substring(7);
         }
         return null;
     }
-    public String getCorrectToken(String string){
-        String token = parseJwt(string);
-        if(token == null){
+    public String extractAndValidateToken(String headerValue) {
+        String token = extractToken(headerValue);
+        if (token == null) {
             throw new InvalidTokenException("Invalid token format");
         }
-        if (!validateJwtToken(token)) {
-            throw new InvalidTokenException("Invalid token "+token);
+        if (!isValid(token)) {
+            throw new InvalidTokenException("Invalid or expired token");
         }
-        return getUserNameFromJwtToken(token);
+        return getUsernameFromJwtToken(token);
     }
-    public boolean validateJwtToken(String authToken) {
+    public boolean isValid(String token) {
         try {
-            Jwts.parserBuilder().setSigningKey(key()).build().parse(authToken);
+            parseClaims(token);
             return true;
-        } catch (MalformedJwtException | ExpiredJwtException | UnsupportedJwtException | IllegalArgumentException ignored) {
+        } catch (JwtException | IllegalArgumentException e) {
+            return false;
         }
-        return false;
+    }
+    private Claims parseClaims(String token) {
+        return Jwts.parserBuilder()
+                .setSigningKey(key())
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+    }
+    private Key key() {
+        return Keys.hmacShaKeyFor(Decoders.BASE64.decode(jwtSecret));
+    }
+
+    private String resolveUsername(Authentication authentication) {
+        if (authentication.getPrincipal() instanceof UserDetails userDetails) {
+            return userDetails.getUsername();
+        } else if (authentication.getPrincipal() instanceof OAuth2User oAuth2User) {
+            return oAuth2User.getName();
+        } else {
+            return authentication.getName();
+        }
+    }
+    private List<String> resolveRoles(Authentication authentication) {
+        if (authentication.getPrincipal() instanceof UserDetails userDetails) {
+            return userDetails.getAuthorities().stream()
+                    .map(GrantedAuthority::getAuthority)
+                    .toList();
+        } else {
+            return List.of("USER");
+        }
     }
 }

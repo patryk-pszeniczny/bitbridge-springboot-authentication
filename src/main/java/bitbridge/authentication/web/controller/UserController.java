@@ -22,7 +22,7 @@ public class UserController {
 
     @GetMapping("/profile")
     public ResponseEntity<UserResponse> getCurrentUser(@RequestHeader("Authorization") String jwt) {
-        String email = jwtService.getCorrectToken(jwt);
+        String email = jwtService.extractAndValidateToken(jwt);
         User user = userService.findByEmail(email).orElseThrow(() -> new UserNotFoundException("User not found with email: " + email));
         UserResponse userResponse = new UserResponse();
         userResponse.setEmail(user.getEmail());
