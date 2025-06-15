@@ -22,10 +22,6 @@ import org.springframework.web.cors.CorsConfigurationSource;
 @EnableWebSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
-
-    @Value("${cors.allowed-origins}")
-    private String[] allowedOrigins;
-
     private final CorsPolicy corsPolicy;
     private final JwtOAuth2SuccessHandler successHandler;
     private final JwtOAuth2FailureHandler failureHandler;
@@ -42,7 +38,7 @@ public class SecurityConfig {
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
-        return corsPolicy.createCorsConfigurationSource(allowedOrigins);
+        return corsPolicy.createCorsConfigurationSource();
     }
 
     @Bean
