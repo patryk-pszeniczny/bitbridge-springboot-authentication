@@ -1,4 +1,4 @@
-package bitbridge.authentication.infrastructure.security;
+package bitbridge.authentication.infrastructure.security.principal;
 
 import bitbridge.authentication.domain.model.User;
 import lombok.Getter;
@@ -8,7 +8,6 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 
 import java.util.Collection;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Getter
 public class OAuth2UserPrincipal implements OAuth2User {
@@ -28,8 +27,8 @@ public class OAuth2UserPrincipal implements OAuth2User {
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return user.getRoles().stream()
-                .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
-                .collect(Collectors.toList());
+                .map(role -> new SimpleGrantedAuthority("ROLE_" + role.toUpperCase()))
+                .toList();
     }
 
     @Override

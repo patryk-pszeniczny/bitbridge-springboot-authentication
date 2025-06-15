@@ -11,97 +11,108 @@ import bitbridge.authentication.web.dto.response.LoginResponse;
 import bitbridge.authentication.web.dto.response.RegisterResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
-
+@Slf4j
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
 public class AuthController {
+
     private final JwtService jwtService;
     private final UserService userService;
-    private final CustomUserDetailsImpl customUserDetailsService;
+    private final CustomUserDetailsImpl userDetailsService;
     private final PasswordEncoder passwordEncoder;
+
     @PostMapping("/login")
-    public ResponseEntity<LoginResponse> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
-        System.out.println("Login request received: " + loginRequest);
+    public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest loginRequest) {
         String email = loginRequest.getEmail();
         String password = loginRequest.getPassword();
-        UserDetails userDetails = customUserDetailsService.loadUserByUsername(email);
-        if (userDetails == null) {
-            LoginResponse loginResponse = new LoginResponse();
-            loginResponse.setMessage("Invalid user");
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(loginResponse);
-        }
-        if(!passwordEncoder.matches(password, userDetails.getPassword())) {
-            LoginResponse loginResponse = new LoginResponse();
-            loginResponse.setMessage("Invalid username or password");
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(loginResponse);
-        }
-        Authentication authentication = new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities());
-        SecurityContextHolder.getContext().setAuthentication(authentication);
 
-        String jwt = jwtService.generateJwtToken(authentication);
-        List<String> roles = authentication.getAuthorities().stream()
+        UserPrincipal userDetails;
+        try {
+            userDetails = (UserPrincipal) userDetailsService.loadUserByUsername(email);
+        } catch (bitbridge.authentication.exception.UserNotFoundException e) {
+            return unauthorized("Invalid email or password");
+        }
+
+        if (!passwordEncoder.matches(password, userDetails.getPassword())) {
+            return unauthorized("Invalid email or password");
+        }
+
+        Authentication authentication = new UsernamePasswordAuthenticationToken(
+                userDetails, null, userDetails.getAuthorities()
+        );
+        String token = jwtService.generateJwtToken(authentication);
+
+        LoginResponse response = new LoginResponse();
+        response.setEmail(email);
+        response.setRoles(userDetails.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
-                .toList();
+                .toList());
+        response.setAccessToken(token);
+        response.setMessage("Login successful");
 
-        LoginResponse loginResponse = new LoginResponse();
-        loginResponse.setAccessToken(jwt);
-        loginResponse.setEmail(email);
-        loginResponse.setRoles(roles);
-        loginResponse.setMessage("Login successful");
-        return ResponseEntity.ok(loginResponse);
+        return ResponseEntity.ok(response);
     }
+
     @PostMapping("/register")
-    public ResponseEntity<RegisterResponse> registerUser(@Valid @RequestBody RegisterRequest registerRequest) {
-        String username = registerRequest.getUsername();
-        String email = registerRequest.getEmail();
-        User isUserExists = userService.findByUserNameOrEmail(username, email).orElse(null);
-        if (isUserExists != null) {
-            RegisterResponse registerResponse = new RegisterResponse();
-            registerResponse.setMessage("User already exists with username or email");
-            return ResponseEntity.badRequest().body(registerResponse);
+    public ResponseEntity<RegisterResponse> register(@Valid @RequestBody RegisterRequest request) {
+        if (userService.findByUserNameOrEmail(request.getUsername(), request.getEmail()).isPresent()) {
+            RegisterResponse response = new RegisterResponse();
+            response.setMessage("User already exists with given username or email");
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
         }
 
-        String password = registerRequest.getPassword();
+        User user = userService.proccessAuthUser(
+                request.getUsername(),
+                request.getEmail(),
+                request.getPassword()
+        );
 
-        Authentication authentication = new UsernamePasswordAuthenticationToken(email, password);
-        SecurityContextHolder.getContext().setAuthentication(authentication);
+        Authentication authentication = new UsernamePasswordAuthenticationToken(
+                user.getUsername(), null, user.getRoles().stream()
+                .map(role -> (GrantedAuthority) () -> "ROLE_" + role)
+                .toList()
+        );
 
-        User user = this.userService.proccessAuthUser(username, email, password);
+        String token = jwtService.generateJwtToken(authentication);
 
-        RegisterResponse registerResponse = new RegisterResponse();
-        registerResponse.setEmail(user.getEmail());
-        registerResponse.setAccessToken(jwtService.generateJwtToken(authentication));
-        registerResponse.setRoles(user.getRoles().stream().toList());
-        registerResponse.setMessage("User registered successfully");
-        return ResponseEntity.status(HttpStatus.CREATED).body(registerResponse);
+        RegisterResponse response = new RegisterResponse();
+        response.setEmail(user.getEmail());
+        response.setRoles(user.getRoles().stream().toList());
+        response.setAccessToken(token);
+        response.setMessage("User registered successfully");
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
+
     @GetMapping("/oauth2/success")
     public ResponseEntity<LoginResponse> oauth2Success(Authentication authentication) {
         UserPrincipal userDetails = (UserPrincipal) authentication.getPrincipal();
-        Set<String> roles = userDetails.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority)
-                .collect(Collectors.toSet());
-        String jwtToken = jwtService.generateJwtToken(authentication);
+        String token = jwtService.generateJwtToken(authentication);
 
-        LoginResponse loginResponse = new LoginResponse();
-        loginResponse.setAccessToken(jwtToken);
-        loginResponse.setEmail(userDetails.getUsername());
-        loginResponse.setRoles(roles.stream().toList());
-        loginResponse.setMessage("OAuth2 login successful");
-        return ResponseEntity.ok(loginResponse);
+        LoginResponse response = new LoginResponse();
+        response.setEmail(userDetails.getEmail());
+        response.setRoles(userDetails.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .toList());
+        response.setAccessToken(token);
+        response.setMessage("OAuth2 login successful");
+
+        return ResponseEntity.ok(response);
+    }
+
+    private ResponseEntity<LoginResponse> unauthorized(String message) {
+        LoginResponse response = new LoginResponse();
+        response.setMessage(message);
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
     }
 }
