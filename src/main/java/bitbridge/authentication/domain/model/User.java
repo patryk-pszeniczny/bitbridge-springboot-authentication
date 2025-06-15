@@ -55,7 +55,6 @@ public class User {
     @CollectionTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"))
     @Column(name = "role", nullable = false)
     private Set<String> roles = new HashSet<>();
-
     public void addAuthMethod(UserAuthMethod method) {
         method.setUser(this);
         authMethods.add(method);

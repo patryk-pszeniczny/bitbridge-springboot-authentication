@@ -15,8 +15,9 @@ import java.util.UUID;
 @ToString(exclude = "user")
 @EqualsAndHashCode(exclude = "user")
 @Entity
-@Table(name = "auth_methods")
+@Table(name = "auth_methods", uniqueConstraints = @UniqueConstraint(columnNames = {"provider", "provider_id"}))
 public class UserAuthMethod {
+
     @Id
     @GeneratedValue(generator = "UUID")
     @GenericGenerator(name = "UUID", strategy = "org.hibernate.id.UUIDGenerator")
@@ -30,7 +31,7 @@ public class UserAuthMethod {
     private String providerId;
 
     @JsonIgnore
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 }

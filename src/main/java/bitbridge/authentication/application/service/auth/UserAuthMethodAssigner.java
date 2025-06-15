@@ -12,7 +12,6 @@ public class UserAuthMethodAssigner {
         UserAuthMethod method = new UserAuthMethod();
         method.setProvider(provider);
         method.setProviderId(providerId);
-        method.setUser(user);
-        user.getAuthMethods().add(method);
+        user.addAuthMethod(method);
     }
 }
