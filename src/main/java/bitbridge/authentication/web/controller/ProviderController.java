@@ -20,24 +20,16 @@ public class ProviderController {
     private final UserService userService;
     private final JwtService jwtService;
     private final UserAuthMethodRepository userAuthMethodRepository;
-
-//    @GetMapping("/{provider_id}")
-//    public ResponseEntity<UserAuthMethod> providerById(
-//            @PathVariable String provider_id,
-//            @RequestHeader("Authorization") String jwt) {
-//        String email = jwtService.getCorrectToken(jwt);
-//        userService.findByEmail(email).orElseThrow(() -> new UserNotFoundException("User not found with email: " + email));
-//        UserAuthMethod authMethod = userAuthMethodRepository.findByProviderId(provider_id)
-//                .orElseThrow(() -> new UserNotFoundException("Provider not found with ID: " + provider_id));
-//        return ResponseEntity.ok(authMethod);
-//    }
     @GetMapping("/user")
     public ResponseEntity<List<UserAuthMethod>> userProviders(
             @RequestHeader("Authorization") String jwt) {
         String email = jwtService.extractAndValidateToken(jwt);
-        User user = userService.findByEmail(email).orElseThrow(() -> new UserNotFoundException("User not found with email: " + email));
+        User user = userService.findByEmail(email).orElseThrow(() ->
+                new UserNotFoundException("User not found with email: " + email));
+
         List<UserAuthMethod> authMethods = userAuthMethodRepository.findAllByUserId(user.getId())
                         .orElseThrow(() -> new UserNotFoundException("No providers found for user with ID: " + user.getId()));
+
         return ResponseEntity.ok(authMethods);
     }
 }
