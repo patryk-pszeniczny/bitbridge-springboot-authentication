@@ -66,6 +66,7 @@ public class AuthController {
 
     @PostMapping("/register")
     public ResponseEntity<RegisterResponse> register(@Valid @RequestBody RegisterRequest request) {
+        System.out.println("Register request received: " + request);
         if (userService.findByUserNameOrEmail(request.getUsername(), request.getEmail()).isPresent()) {
             RegisterResponse response = new RegisterResponse();
             response.setMessage("User already exists with given username or email");

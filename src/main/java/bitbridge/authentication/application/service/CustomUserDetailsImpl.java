@@ -3,6 +3,7 @@ package bitbridge.authentication.application.service;
 import bitbridge.authentication.domain.model.User;
 import bitbridge.authentication.domain.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -22,6 +23,11 @@ public class CustomUserDetailsImpl implements UserDetailsService {
 
     @Value("${app.default.role.prefix}")
     private String defaultRolePrefix;
+
+    @Autowired
+    public CustomUserDetailsImpl(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
